@@ -6,17 +6,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	bt "github.com/charmbracelet/bubbletea"
 )
 
-func ListProjects(baseurl string, token string, tea *bt.Program) (error, []Project) {
-	tea.Send(tui.StageMsg("Listing projects"))
+func ListProjects(baseurl string, token string, pg tui.Program) (error, []Project) {
+	pg.StageMsgSend("Listing projects")
 
 	var ps []Project
 	page := 0
 	for {
-		tea.Send(tui.JobMsg(fmt.Sprintf("Queriying project page %d", page)))
+		pg.JobMsgSend(fmt.Sprintf("Queriying project page %d", page))
 		err, body := authenticatedGetReq(fmt.Sprintf("%s/api/v4/projects?page=%d", baseurl, page), token)
 		if err != nil {
 			return err, nil
@@ -34,12 +32,12 @@ func ListProjects(baseurl string, token string, tea *bt.Program) (error, []Proje
 	return nil, ps
 }
 
-func ListProjectFiles(baseurl string, token string, fileSuffix string, projects []Project, tea *bt.Program) (error, map[Project]File) {
-	tea.Send(tui.StageMsg("Listing project files"))
+func ListProjectFiles(baseurl string, token string, fileSuffix string, projects []Project, pg tui.Program) (error, map[Project]File) {
+	pg.StageMsgSend("Listing project files")
 	projectFiles := make(map[Project]File)
 
 	for _, p := range projects {
-		tea.Send(tui.JobMsg(fmt.Sprintf("Quering file tree for %s", p.WebUrl)))
+		pg.JobMsgSend(fmt.Sprintf("Quering file tree for %s", p.WebUrl))
 		if p.Archived {
 			continue
 		}
@@ -60,14 +58,14 @@ func ListProjectFiles(baseurl string, token string, fileSuffix string, projects 
 	return nil, projectFiles
 }
 
-func GetFiles(baseurl string, token string, projectFiles map[Project]File, tea *bt.Program) (error, map[string][]byte) {
-	tea.Send(tui.StageMsg("Downloading files"))
+func GetFiles(baseurl string, token string, projectFiles map[Project]File, pg tui.Program) (error, map[string][]byte) {
+	pg.StageMsgSend("Downloading files")
 
 	nameFiles := make(map[string][]byte)
 
 	for p, f := range projectFiles {
 		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Name)
-		tea.Send(tui.JobMsg(blobPath))
+		pg.JobMsgSend(blobPath)
 		err, bytes := getRaw(baseurl, token, p.Id, f.Id)
 		if err != nil {
 			return err, nil

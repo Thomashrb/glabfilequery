@@ -2,7 +2,7 @@ package tui
 
 import (
 	"github.com/charmbracelet/bubbles/spinner"
-	bt "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -13,9 +13,9 @@ var (
 )
 
 type (
-	StageMsg string
+	stageMsg string
 
-	JobMsg string
+	jobMsg string
 
 	model struct {
 		spinner spinner.Model
@@ -25,7 +25,7 @@ type (
 	}
 )
 
-func NewModel() model {
+func newModel() model {
 	const windowSize = 10
 	s := spinner.New()
 	s.Style = spinnerStyle
@@ -36,23 +36,23 @@ func NewModel() model {
 	}
 }
 
-func (m model) Init() bt.Cmd {
+func (m model) Init() tea.Cmd {
 	return spinner.Tick
 }
 
-func (m model) Update(msg bt.Msg) (bt.Model, bt.Cmd) {
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case bt.KeyMsg:
+	case tea.KeyMsg:
 		m.aborted = true
-		return m, bt.Quit
-	case JobMsg:
+		return m, tea.Quit
+	case jobMsg:
 		m.jobs = append(m.jobs[1:], string(msg))
 		return m, nil
-	case StageMsg:
+	case stageMsg:
 		m.stage = string(msg)
 		return m, nil
 	case spinner.TickMsg:
-		var cmd bt.Cmd
+		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
 	default:
