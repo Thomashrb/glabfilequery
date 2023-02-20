@@ -5,7 +5,7 @@ import (
 	"glabfilequery/internal/tui"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"regexp"
 )
 
 func ListProjects(baseurl string, token string, pg tui.Program) (error, []Project) {
@@ -32,7 +32,7 @@ func ListProjects(baseurl string, token string, pg tui.Program) (error, []Projec
 	return nil, ps
 }
 
-func ListProjectFiles(baseurl string, token string, fileSuffix string, projects []Project, pg tui.Program) (error, map[Project]File) {
+func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, projects []Project, pg tui.Program) (error, map[Project]File) {
 	pg.StageMsgSend("Listing project files")
 	projectFiles := make(map[Project]File)
 
@@ -49,7 +49,7 @@ func ListProjectFiles(baseurl string, token string, fileSuffix string, projects 
 			if f.Type != "blob" {
 				continue
 			}
-			if !strings.HasSuffix(f.Name, fileSuffix) {
+			if !fileRegex.Match([]byte(f.Name)) {
 				continue
 			}
 			projectFiles[p] = f

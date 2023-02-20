@@ -6,12 +6,13 @@ import (
 	"glabfilequery/internal/gitlab"
 	"glabfilequery/internal/tui"
 	"os"
+	"regexp"
 )
 
 func Run(
 	baseurl string,
 	token string,
-	fileSuffix string,
+	fileRegex string,
 	outputDir string,
 	dryRun bool,
 ) {
@@ -23,7 +24,8 @@ func Run(
 			fmt.Printf("Could not list projects from %s, error: %s", baseurl, err)
 		}
 
-		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileSuffix, projects, p)
+		re := regexp.MustCompile(fileRegex)
+		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, re, projects, p)
 		if err != nil {
 			fmt.Printf("Could not list files from %s, error: %s", baseurl, err)
 		}
