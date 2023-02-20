@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"glabfilequery/internal"
+	"regexp"
 )
 
 var (
@@ -21,5 +22,6 @@ func main() {
 	flag.BoolVar(&dryRun, "dryrun", false, "do not store any output")
 	flag.Parse()
 
-	internal.Run(baseurl, token, fileRegex, outputDir, dryRun)
+	re := regexp.MustCompile(fileRegex)
+	internal.Run(baseurl, token, re, outputDir, dryRun)
 }

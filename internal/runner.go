@@ -12,7 +12,7 @@ import (
 func Run(
 	baseurl string,
 	token string,
-	fileRegex string,
+	fileRegex *regexp.Regexp,
 	outputDir string,
 	dryRun bool,
 ) {
@@ -24,8 +24,7 @@ func Run(
 			fmt.Printf("Could not list projects from %s, error: %s", baseurl, err)
 		}
 
-		re := regexp.MustCompile(fileRegex)
-		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, re, projects, p)
+		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileRegex, projects, p)
 		if err != nil {
 			fmt.Printf("Could not list files from %s, error: %s", baseurl, err)
 		}
