@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"sync"
 )
 
 func ListProjects(baseurl string, token string, pg tui.Program) (error, []Project) {
@@ -33,45 +34,61 @@ func ListProjects(baseurl string, token string, pg tui.Program) (error, []Projec
 }
 
 func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, projects []Project, pg tui.Program) (error, map[Project]File) {
-	pg.StageMsgSend("Listing project files")
+	wg := sync.WaitGroup{}
 	projectFiles := make(map[Project]File)
+	var filteredPs []Project
 
 	for _, p := range projects {
-		pg.JobMsgSend(fmt.Sprintf("Quering file tree for %s", p.WebUrl))
 		if p.Archived {
 			continue
 		}
-		err, files := listFiles(baseurl, token, p.Id)
-		if err != nil {
-			return err, nil
-		}
-		for _, f := range files {
-			if f.Type != "blob" {
-				continue
-			}
-			if !fileRegex.Match([]byte(f.Name)) {
-				continue
-			}
-			projectFiles[p] = f
-		}
+		wg.Add(1)
+		filteredPs = append(filteredPs, p)
 	}
+
+	pg.StageMsgSend("Listing project files")
+	for _, p := range filteredPs {
+		pg.JobMsgSend(fmt.Sprintf("Quering file tree for %s", p.WebUrl))
+		go func(p Project) {
+			defer wg.Done()
+			err, files := listFiles(baseurl, token, p.Id)
+			if err == nil {
+				for _, f := range files {
+					if f.Type != "blob" {
+						continue
+					}
+					if !fileRegex.Match([]byte(f.Name)) {
+						continue
+					}
+					projectFiles[p] = f
+				}
+			}
+		}(p)
+	}
+
+	wg.Wait()
 	return nil, projectFiles
 }
 
 func GetFiles(baseurl string, token string, projectFiles map[Project]File, pg tui.Program) (error, map[string][]byte) {
-	pg.StageMsgSend("Downloading files")
-
+	wg := sync.WaitGroup{}
+	wg.Add(len(projectFiles))
 	nameFiles := make(map[string][]byte)
 
+	pg.StageMsgSend("Downloading files")
 	for p, f := range projectFiles {
 		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Name)
 		pg.JobMsgSend(blobPath)
-		err, bytes := getRaw(baseurl, token, p.Id, f.Id)
-		if err != nil {
-			return err, nil
-		}
-		nameFiles[blobPath] = bytes
+		go func(p Project, f File) {
+			defer wg.Done()
+			err, bytes := getRaw(baseurl, token, p.Id, f.Id)
+			if err == nil {
+				nameFiles[blobPath] = bytes
+			}
+		}(p, f)
 	}
+
+	wg.Wait()
 	return nil, nameFiles
 }
 
