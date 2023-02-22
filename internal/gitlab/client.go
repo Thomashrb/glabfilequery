@@ -15,7 +15,6 @@ func ListProjects(baseurl string, token string, pg tui.Program) (error, []Projec
 	var ps []Project
 	page := 0
 	for {
-		pg.JobMsgSend(fmt.Sprintf("Queriying project page %d", page))
 		err, body := authenticatedGetReq(fmt.Sprintf("%s/api/v4/projects?page=%d", baseurl, page), token)
 		if err != nil {
 			return err, nil
@@ -48,7 +47,6 @@ func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, pr
 
 	pg.StageMsgSend("Listing project files")
 	for _, p := range filteredPs {
-		pg.JobMsgSend(fmt.Sprintf("Quering file tree for %s", p.WebUrl))
 		go func(p Project) {
 			defer wg.Done()
 			err, files := listFiles(baseurl, token, p.Id)
@@ -78,7 +76,6 @@ func GetFiles(baseurl string, token string, projectFiles map[Project]File, pg tu
 	pg.StageMsgSend("Downloading files")
 	for p, f := range projectFiles {
 		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Name)
-		pg.JobMsgSend(blobPath)
 		go func(p Project, f File) {
 			defer wg.Done()
 			err, bytes := getRaw(baseurl, token, p.Id, f.Id)

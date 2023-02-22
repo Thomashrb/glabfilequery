@@ -15,8 +15,6 @@ var (
 type (
 	stageMsg string
 
-	jobMsg string
-
 	model struct {
 		spinner spinner.Model
 		stage   string
@@ -32,7 +30,6 @@ func newModel() model {
 	return model{
 		stage:   "Initializing",
 		spinner: s,
-		jobs:    make([]string, windowSize),
 	}
 }
 
@@ -45,9 +42,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		m.aborted = true
 		return m, tea.Quit
-	case jobMsg:
-		m.jobs = append(m.jobs[1:], string(msg))
-		return m, nil
 	case stageMsg:
 		m.stage = string(msg)
 		return m, nil
@@ -67,12 +61,6 @@ func (m model) View() string {
 		s += "Aborted!"
 	} else {
 		s += m.spinner.View() + " " + m.stage
-	}
-
-	s += "\n\n"
-
-	for _, res := range m.jobs {
-		s += res + "\n"
 	}
 
 	if !m.aborted {

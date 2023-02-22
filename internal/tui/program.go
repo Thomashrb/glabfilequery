@@ -15,7 +15,3 @@ func NewProgram() Program {
 func (p Program) StageMsgSend(msg string) {
 	p.Send(stageMsg(msg))
 }
-
-func (p Program) JobMsgSend(msg string) {
-	p.Send(jobMsg(msg))
-}
