@@ -2,13 +2,11 @@ package fs
 
 import (
 	"fmt"
-	"glabfilequery/internal/tui"
 	"net/url"
 	"os"
 )
 
-func SaveFiles(files map[string][]byte, dirpath string, pg tui.Program) error {
-	pg.StageMsgSend("Saving files to output directory")
+func SaveFiles(files map[string][]byte, dirpath string) error {
 	_, err := os.Stat(dirpath)
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(dirpath, os.ModePerm)

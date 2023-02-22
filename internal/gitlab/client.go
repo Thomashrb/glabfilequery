@@ -2,15 +2,13 @@ package gitlab
 
 import (
 	"fmt"
-	"glabfilequery/internal/tui"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"sync"
 )
 
-func ListProjects(baseurl string, token string, pg tui.Program) (error, []Project) {
-	pg.StageMsgSend("Listing projects")
+func ListProjects(baseurl string, token string) (error, []Project) {
 
 	var ps []Project
 	page := 0
@@ -32,7 +30,7 @@ func ListProjects(baseurl string, token string, pg tui.Program) (error, []Projec
 	return nil, ps
 }
 
-func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, projects []Project, pg tui.Program) (error, map[Project]File) {
+func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, projects []Project) (error, map[Project]File) {
 	wg := sync.WaitGroup{}
 	projectFiles := make(map[Project]File)
 	var filteredPs []Project
@@ -45,7 +43,6 @@ func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, pr
 		filteredPs = append(filteredPs, p)
 	}
 
-	pg.StageMsgSend("Listing project files")
 	for _, p := range filteredPs {
 		go func(p Project) {
 			defer wg.Done()
@@ -68,12 +65,11 @@ func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, pr
 	return nil, projectFiles
 }
 
-func GetFiles(baseurl string, token string, projectFiles map[Project]File, pg tui.Program) (error, map[string][]byte) {
+func GetFiles(baseurl string, token string, projectFiles map[Project]File) (error, map[string][]byte) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(projectFiles))
 	nameFiles := make(map[string][]byte)
 
-	pg.StageMsgSend("Downloading files")
 	for p, f := range projectFiles {
 		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Name)
 		go func(p Project, f File) {

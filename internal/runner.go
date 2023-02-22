@@ -19,28 +19,34 @@ func Run(
 	p := tui.NewProgram()
 
 	go func() {
-		err, projects := gitlab.ListProjects(baseurl, token, p)
+		p.StageMsgSend("Listing projects")
+		err, projects := gitlab.ListProjects(baseurl, token)
 		if err != nil {
 			fmt.Printf("Could not list projects from %s, error: %s", baseurl, err)
 		}
 
-		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileRegex, projects, p)
+		p.StageMsgSend("Listing project files")
+		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileRegex, projects)
 		if err != nil {
 			fmt.Printf("Could not list files from %s, error: %s", baseurl, err)
 		}
 
 		if !dryRun {
-			err, files := gitlab.GetFiles(baseurl, token, projectFiles, p)
+			p.StageMsgSend("Downloading files")
+			err, files := gitlab.GetFiles(baseurl, token, projectFiles)
 			if err != nil {
 				fmt.Printf("Could not pull files from %s, error: %s", baseurl, err)
 			}
-			err = fs.SaveFiles(files, outputDir, p)
+
+			p.StageMsgSend("Saving files to output directory")
+			err = fs.SaveFiles(files, outputDir)
 			if err != nil {
 				fmt.Printf("Could not save files error: %s", err)
 			}
 		}
 
-		os.Exit(0)
+		p.QuitMsgSend()
+		p.Quit()
 	}()
 
 	if _, err := p.Program.Run(); err != nil {

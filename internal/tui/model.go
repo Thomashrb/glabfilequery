@@ -14,12 +14,13 @@ var (
 
 type (
 	stageMsg string
+	exitMsg  bool
 
 	model struct {
 		spinner spinner.Model
 		stage   string
 		jobs    []string
-		aborted bool
+		exited  exitMsg
 	}
 )
 
@@ -40,10 +41,13 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		m.aborted = true
+		m.exited = true
 		return m, tea.Quit
 	case stageMsg:
 		m.stage = string(msg)
+		return m, nil
+	case exitMsg:
+		m.exited = msg
 		return m, nil
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -57,17 +61,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	var s string
 
-	if m.aborted {
-		s += "Aborted!"
+	if m.exited {
+		s += "Exited!"
 	} else {
 		s += m.spinner.View() + " " + m.stage
 	}
 
-	if !m.aborted {
+	if !m.exited {
 		s += helpStyle.Render("Press any key to exit")
 	}
 
-	if m.aborted {
+	if m.exited {
 		s += "\n"
 	}
 
