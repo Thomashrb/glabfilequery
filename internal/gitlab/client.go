@@ -21,7 +21,7 @@ func ListProjects(baseurl string, token string) (error, []Project) {
 		if err != nil {
 			return err, nil
 		}
-		if len(psPage) <= 0 {
+		if len(psPage) == 0 {
 			break
 		}
 		ps = append(ps, psPage...)
@@ -30,7 +30,7 @@ func ListProjects(baseurl string, token string) (error, []Project) {
 	return nil, ps
 }
 
-func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, projects []Project) (error, map[Project]File) {
+func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, recursive bool, projects []Project) (error, map[Project]File) {
 	wg := sync.WaitGroup{}
 	projectFiles := make(map[Project]File)
 	var filteredPs []Project
@@ -46,13 +46,13 @@ func ListProjectFiles(baseurl string, token string, fileRegex *regexp.Regexp, pr
 	for _, p := range filteredPs {
 		go func(p Project) {
 			defer wg.Done()
-			err, files := listFiles(baseurl, token, p.Id)
+			err, files := listFiles(baseurl, token, p.Id, recursive)
 			if err == nil {
 				for _, f := range files {
 					if f.Type != "blob" {
 						continue
 					}
-					if !fileRegex.Match([]byte(f.Name)) {
+					if !fileRegex.Match([]byte(f.Path)) {
 						continue
 					}
 					projectFiles[p] = f
@@ -71,7 +71,7 @@ func GetFiles(baseurl string, token string, projectFiles map[Project]File) (erro
 	nameFiles := make(map[string][]byte)
 
 	for p, f := range projectFiles {
-		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Name)
+		blobPath := fmt.Sprintf("%s/-/blob/%s/%s", p.WebUrl, p.DefaultBranch, f.Path)
 		go func(p Project, f File) {
 			defer wg.Done()
 			err, bytes := getRaw(baseurl, token, p.Id, f.Id)
@@ -110,11 +110,11 @@ func authenticatedGetReq(url string, token string) (error, []byte) {
 	return nil, resBody
 }
 
-func listFiles(baseurl string, token string, projecId int) (error, []File) {
+func listFiles(baseurl string, token string, projecId int, recursive bool) (error, []File) {
 	var fs []File
 	page := 0
 	for {
-		err, body := authenticatedGetReq(fmt.Sprintf("%s/api/v4/projects/%d/repository/tree?page=%d", baseurl, projecId, page), token)
+		err, body := authenticatedGetReq(fmt.Sprintf("%s/api/v4/projects/%d/repository/tree?per_page=1000&page=%d&recursive=%t", baseurl, projecId, page, recursive), token)
 		if err != nil {
 			return fmt.Errorf("Listing files failed %s", err), nil
 		}
@@ -122,12 +122,13 @@ func listFiles(baseurl string, token string, projecId int) (error, []File) {
 		if err != nil {
 			return err, nil
 		}
-		if len(fsPage) <= 0 {
+		if len(fsPage) == 0 {
 			break
 		}
 		fs = append(fs, fsPage...)
 		page++
 	}
+
 	return nil, fs
 }
 

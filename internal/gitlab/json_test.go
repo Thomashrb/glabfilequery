@@ -93,7 +93,7 @@ func TestToFilesCorrectlyParsesTestInput(t *testing.T) {
 	if f.Type != "blob" {
 		t.Fatalf("ToFiles produces the wrong Type: %s", f.Type)
 	}
-	if f.Name != ".gitignore" {
-		t.Fatalf("ToFiles produces the wrong Name: %s", f.Name)
+	if f.Path != ".gitignore" {
+		t.Fatalf("ToFiles produces the wrong Path: %s", f.Path)
 	}
 }

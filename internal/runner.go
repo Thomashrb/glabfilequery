@@ -14,6 +14,7 @@ func Run(
 	token string,
 	fileRegex *regexp.Regexp,
 	outputDir string,
+	recursive bool,
 	dryRun bool,
 ) {
 	p := tui.NewProgram()
@@ -26,7 +27,7 @@ func Run(
 		}
 
 		p.StageMsgSend("Listing project files")
-		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileRegex, projects)
+		err, projectFiles := gitlab.ListProjectFiles(baseurl, token, fileRegex, recursive, projects)
 		if err != nil {
 			fmt.Printf("Could not list files from %s, error: %s", baseurl, err)
 		}

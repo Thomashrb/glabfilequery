@@ -17,7 +17,7 @@ type (
 
 	File struct {
 		Id   string
-		Name string
+		Path string
 		Type string
 	}
 )
